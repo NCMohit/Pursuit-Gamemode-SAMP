@@ -250,7 +250,7 @@ public OnRconLoginAttempt(ip[], password[], success)
 public OnPlayerUpdate(playerid)
 {
 	if(matchstart == 0){
-		if(copsize >=1 && robsize >=0){
+		if(copsize >=1 && robsize >=1){
 		    PlayerTextDrawDestroy(playerid, waittxt[playerid]);
 		    SendClientMessage(playerid,0xFFFFFFFF,"Match starting in 10 seconds !!!");
 			SetTimerEx("Wait", 10000, false, "i", playerid);
