@@ -2,6 +2,10 @@
 
 #include <a_samp>
 
+new copsizestring[20];
+new robsizestring[20];
+new copstextdraw;
+new robtextdraw;
 new Float:coppos = 2033.4949;
 new Float:robpos = 2033.4888;
 new copsize = 0;
@@ -22,7 +26,7 @@ main()
 public OnGameModeInit()
 {
 	// Don't use these lines if it's a filterscript
-	SetGameModeText("CnR but with Cars");
+	SetGameModeText("CnR Pursuit");
 	AddPlayerClass(0, 1958.3783, 1343.1572, 15.3746, 269.1425, 0, 0, 0, 0, 0, 0);
 	AddPlayerClass(1, 1958.3783, 1343.1572, 15.3746, 269.1425, 0, 0, 0, 0, 0, 0);
 	AddPlayerClass(2, 1958.3783, 1343.1572, 15.3746, 269.1425, 0, 0, 0, 0, 0, 0);
@@ -31,6 +35,8 @@ public OnGameModeInit()
 	AddPlayerClass(5, 1958.3783, 1343.1572, 15.3746, 269.1425, 0, 0, 0, 0, 0, 0);
 	AddPlayerClass(6, 1958.3783, 1343.1572, 15.3746, 269.1425, 0, 0, 0, 0, 0, 0);
 	DisableInteriorEnterExits();
+	copstextdraw = TextDrawCreate( 50.0, 80.0, copsizestring);
+	robtextdraw = TextDrawCreate( 50.0, 100.0, robsizestring);
 	return 1;
 }
 
@@ -50,21 +56,22 @@ public OnPlayerRequestClass(playerid, classid)
 
 public OnPlayerConnect(playerid)
 {
-    GameTextForPlayer(playerid,"ASh's CnR Pursuit",3000,4);
-    waittxt[playerid] = CreatePlayerTextDraw(playerid, 320.0, 400.0, "Waiting for players");
-    SetPlayerTime(playerid,0,0);
+    GameTextForPlayer(playerid,"CnR Pursuit",3000,4);
+    waittxt[playerid] = CreatePlayerTextDraw(playerid, 220.0, 100.0, "Waiting for players");
 	return 1;
 }
 
 public OnPlayerDisconnect(playerid, reason)
 {
-	if(cops[playerid]){
-		DestroyVehicle(cops[playerid]);
-		copsize -= 1;
-	}
-	if(robbers[playerid]){
-		DestroyVehicle(robbers[playerid]);
-		robsize -= 1;
+	if(matchstart == 1){
+		if(cops[playerid]){
+			DestroyVehicle(cops[playerid]);
+			copsize -= 1;
+		}
+		if(robbers[playerid]){
+			DestroyVehicle(robbers[playerid]);
+			robsize -= 1;
+		}
 	}
 	return 1;
 }
@@ -73,17 +80,22 @@ public OnPlayerSpawn(playerid)
 {
     SetPlayerInterior(playerid,17);
 	SetPlayerPos(playerid,493.390991,-22.722799,1000.679687);
-    SendClientMessage(playerid,0xFFFFFFFF,"To join any team: /joincop OR /joinrobbers");
+    SendClientMessage(playerid,0xFFFFFFFF,"To join any team: /joincops OR /joinrobbers");
+    SetPlayerTime(playerid,0,0);
 	return 1;
 }
 
 public OnPlayerDeath(playerid, killerid, reason)
 {
-	if(cops[playerid]){
-	    copsize -= 1;
-	}
-	if(robbers[playerid]){
-	    robsize -= 1;
+	if(matchstart == 1){
+		if(cops[playerid]){
+		    DestroyVehicle(cops[playerid]);
+		    copsize -= 1;
+		}
+		if(robbers[playerid]){
+		    DestroyVehicle(robbers[playerid]);
+		    robsize -= 1;
+		}
 	}
 	return 1;
 }
@@ -105,34 +117,52 @@ public OnPlayerText(playerid, text[])
 
 public OnPlayerCommandText(playerid, cmdtext[])
 {
-	if(IsPlayerInAnyVehicle(playerid)){
-	    SendClientMessage(playerid,0xFFFFFFFF,"You have already chosen cop/robber dumbass OR you cant type for shit");
+    if (strcmp("/kill", cmdtext, true, 10) == 0){
+		if(IsPlayerInAnyVehicle(playerid)){
+			if(cops[playerid]){
+				copsize -= 1;
+			}
+			if(robbers[playerid]){
+				robsize -= 1;
+			}
+		}
+		SetPlayerHealth(playerid,0);
 	}
 	else{
-		if (strcmp("/joincop", cmdtext, true, 10) == 0)
-		{
-		    SetPlayerInterior(playerid,0);
-			SendClientMessage(playerid,0xFFFFFFFF,"You have joined cops, your objective is to ram robbers. You also have double car health");
-			SetPlayerPos(playerid,coppos,1348.7268,10.6719,179.9408);
-			coppos += 3;
-			cops[playerid] = CreateVehicle(490, coppos,1348.7268,10.6719,179.9408, -1, -1, -1);
-			PutPlayerInVehicle(playerid, cops[playerid], 0);
-            SetVehicleParamsEx(cops[playerid],0,0,0,0,0,0,0);
-            SetVehicleHealth(cops[playerid],2000);
-            AddVehicleComponent(cops[playerid],1010);
-            SetPlayerColor(playerid, 0x7777DDFF);
-            copsize +=1;
+		if(IsPlayerInAnyVehicle(playerid)){
+		    SendClientMessage(playerid,0xFFFFFFFF,"You have already chosen cop/robber !!");
 		}
-		if(strcmp("/joinrobbers", cmdtext, true, 10) == 0){
-		    SetPlayerInterior(playerid,0);
-	        SendClientMessage(playerid,0xFFFFFFFF,"You have joined robbers, your objective is to run away from cops as long as possible");
-	        SetPlayerPos(playerid,robpos,1312.7020,10.6719,179.9408);
-	        robpos += 3;
-	        robbers[playerid] = CreateVehicle(451, robpos,1312.7020,10.6719,179.9408, -1, -1, -1);
-	        PutPlayerInVehicle(playerid, robbers[playerid], 0);
-	        SetVehicleParamsEx(robbers[playerid],0,0,0,0,0,0,0);
-	        SetPlayerColor(playerid, 0x77CC77FF);
-			robsize +=1;
+		else{
+		    if(matchstart == 1){
+                SendClientMessage(playerid,0xFFFFFFFF,"Match has already started. Plaese wait for it to finish");
+			}
+			else{
+				if (strcmp("/joincops", cmdtext, true, 10) == 0)
+				{
+				    SetPlayerInterior(playerid,0);
+					SendClientMessage(playerid,0xFFFFFFFF,"You have joined cops, your objective is to ram robbers. You also have double car health");
+					SetPlayerPos(playerid,coppos,1348.7268,10.6719,179.9408);
+					coppos += 3;
+					cops[playerid] = CreateVehicle(490, coppos,1348.7268,10.6719,179.9408, -1, -1, -1);
+					PutPlayerInVehicle(playerid, cops[playerid], 0);
+		            SetVehicleParamsEx(cops[playerid],0,0,0,0,0,0,0);
+		            SetVehicleHealth(cops[playerid],2000);
+		            AddVehicleComponent(cops[playerid],1010);
+		            SetPlayerColor(playerid, 0x7777DDFF);
+		            copsize +=1;
+				}
+				if(strcmp("/joinrobbers", cmdtext, true, 10) == 0){
+				    SetPlayerInterior(playerid,0);
+			        SendClientMessage(playerid,0xFFFFFFFF,"You have joined robbers, your objective is to run away from cops as long as possible");
+			        SetPlayerPos(playerid,robpos,1312.7020,10.6719,179.9408);
+			        robpos += 3;
+			        robbers[playerid] = CreateVehicle(480, robpos,1312.7020,10.6719,179.9408, -1, -1, -1);
+			        PutPlayerInVehicle(playerid, robbers[playerid], 0);
+			        SetVehicleParamsEx(robbers[playerid],0,0,0,0,0,0,0);
+			        SetPlayerColor(playerid, 0x77CC77FF);
+					robsize +=1;
+				}
+			}
 		}
 	}
 	return 1;
@@ -151,7 +181,7 @@ public OnPlayerExitVehicle(playerid, vehicleid)
 public OnPlayerStateChange(playerid, newstate, oldstate)
 {
 	if(oldstate == PLAYER_STATE_DRIVER && newstate == PLAYER_STATE_ONFOOT){
-	    SendClientMessage(playerid,0xFFFFFFFF,"Don't leave the car dumbass");
+	    SendClientMessage(playerid,0xFFFFFFFF,"Don't leave the car !!");
 	    if(cops[playerid]){
 	        PutPlayerInVehicle(playerid, cops[playerid], 0);
 		}
@@ -249,11 +279,23 @@ public OnRconLoginAttempt(ip[], password[], success)
 
 public OnPlayerUpdate(playerid)
 {
+	valstr(copsizestring,copsize);
+	valstr(robsizestring,robsize);
+	strcat(copsizestring," Cops alive");
+	strcat(robsizestring," Robbers alive");
+	TextDrawSetString();
+	TextDrawSetString( robtextdraw, robsizestring );
+	TextDrawShowForPlayer(playerid, copstextdraw);
+	TextDrawShowForPlayer(playerid, robtextdraw);
 	if(matchstart == 0){
 		if(copsize >=1 && robsize >=1){
-		    PlayerTextDrawDestroy(playerid, waittxt[playerid]);
-		    SendClientMessage(playerid,0xFFFFFFFF,"Match starting in 10 seconds !!!");
-			SetTimerEx("Wait", 10000, false, "i", playerid);
+		    for(new i = 0; i < MAX_PLAYERS; i++){
+		        if(IsPlayerConnected(i)){
+				    PlayerTextDrawDestroy(playerid, waittxt[i]);
+				    SendClientMessage(i,0xFFFFFFFF,"Match starting in 10 seconds !!!");
+					SetTimerEx("Wait", 10000, false, "i", i);
+				}
+			}
 			matchstart = 2;
 		}
 		else{
@@ -262,15 +304,22 @@ public OnPlayerUpdate(playerid)
 	}
 	if(matchstart == 1){
 		if(robsize == 0 || copsize == 0){
-		    RemovePlayerFromVehicle(playerid);
-			DestroyVehicle(GetPlayerVehicleID(playerid));
-			SendClientMessage(playerid,0xFFFFFFFF,"Match has ended. !!!");
-			SetPlayerHealth(playerid,0);
+		    for(new i = 0; i < MAX_PLAYERS; i++){
+		        if(IsPlayerConnected(i)){
+				    RemovePlayerFromVehicle(i);
+					DestroyVehicle(GetPlayerVehicleID(i));
+					SendClientMessage(i,0xFFFFFFFF,"Match has ended. !!!");
+					SetPlayerHealth(i,0);
+				}
+			}
 			copsize = 0;
 			robsize = 0;
+			coppos = 2033.4949;
+			robpos = 2033.4888;
 			matchstart = 0;
 		}
 	}
+
 	return 1;
 }
 forward Wait(playerid);
@@ -279,10 +328,10 @@ public Wait(playerid)
 	PlayerPlaySound(playerid,1133,0.0,0.0,0.0);
 	SendClientMessage(playerid,0xFFFFFFFF,"Match Started !!!");
 	if(cops[playerid]){
-	    SetVehicleParamsEx(cops[playerid],1,0,0,0,0,0,0);
+	    SetVehicleParamsEx(cops[playerid],1,1,0,0,0,0,0);
 	}
 	if(robbers[playerid]){
-	    SetVehicleParamsEx(robbers[playerid],1,0,0,0,0,0,0);
+	    SetVehicleParamsEx(robbers[playerid],1,1,0,0,0,0,0);
 	}
 	matchstart = 1;
 }
